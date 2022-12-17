@@ -44,13 +44,15 @@ Dataset: xxx
 
 *All steps detailed below have their corresponding reference to that in the commented code*
 
-- Create Database (1)
-- Import REMAX properties data to table 'all_properties' (2)
-- Clean 'all_properties' table (3)
-> *Check format of all columns* <br>
->- 'property_type' - Fix typos/format issues and remove blanks (3.1)
->- 'location' -  (3.2)
-
+>- Create Database (1)
+>- Import REMAX properties data to table 'all_properties' (2) *(42.940 records)*
+>- Clean 'all_properties' table (3)<br><br>
+>     Check format of all columns<br>
+>     'property_type': fix typos/text format issues and remove blanks (3.1) *(no blanks)*<br>
+>     'location': remove blanks *(260 records - 0.6%)*, add 'province' field extracted from the 'location' field and clean the data to leave only valid -and identifiable- provinces' names *(1851 records - 4.3%)*, add 'neighbourhood_or_city' field extracted from the 'location' field and clean the data to leave only valid -and identifiable- neighbourhood or city names *(no blanks)* (3.2) <br>
+>     'price' - (3.3)<br> 
+>     'price_currency' - (3.4)<br>
+>     'total_area_m2' - (3.5)<br>
 
 ## Main SQL Statements applied
 
