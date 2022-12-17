@@ -4,7 +4,7 @@
 
 ## Project objective
 
-.
+create dataset to Analyze pricing.
 
 Data source: https://www.remax.com.ar
 Dataset: xxx
@@ -45,14 +45,21 @@ Dataset: xxx
 *All steps detailed below have their corresponding reference to that in the commented code*
 
 >- Create Database (1)
+><br>
 >- Import REMAX properties data to table 'all_properties' (2) *(42.940 records)*
+><br>
 >- Clean 'all_properties' table (3)<br><br>
 >     Check format of all columns<br>
 >     'property_type': fix typos/text format issues and remove blanks (3.1) *(no blanks)*<br>
 >     'location': remove blanks *(260 records - 0.6%)*, add 'province' field extracted from the 'location' field and clean the data to leave only valid -and identifiable- provinces' names *(1851 records - 4.3%)*, add 'neighbourhood_or_city' field extracted from the 'location' field and clean the data to leave only valid -and identifiable- neighbourhood or city names *(no blanks)* (3.2) <br>
->     'price' - (3.3)<br> 
->     'price_currency' - (3.4)<br>
->     'total_area_m2' - (3.5)<br>
+>     'price': remove non-numeric values *(1795 records - 4.2%)* and format column as number (3.3)<br> 
+>     'price_currency': remove records not expressed in USD *(205 records - 0.5%)* (3.3)<br>
+>     'total_area_m2': (3.4)<br>
+>     'covered_area_m2': (3.5)<br>
+>     'room_number': (3.6)<br>
+>     'bathroom_number': (3.7)<br>
+>     'expenses': (3.8)<br>
+>     'expenses_currency': (3.8)<br>
 
 ## Main SQL Statements applied
 
