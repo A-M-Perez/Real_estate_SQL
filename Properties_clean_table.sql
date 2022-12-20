@@ -44,7 +44,7 @@ FROM real_estate_arg.all_properties;
 #--------------------------------------------------3.1---------------------------------------------------------------------------
 
 /* 
-Check the distinct type of properties available and the number of records per each of them, ordering the data with the highest number of properties in market at the top.
+Check the distinct type of properties available and the number of records per each of them, ordering the data with the highest number of properties in the market at the top.
 */
 SELECT property_type, COUNT(property_type) AS number_of_properties
 FROM real_estate_arg.all_properties
@@ -86,9 +86,9 @@ WHERE location = ''
 GROUP BY location
 ORDER BY number_of_locations DESC;
 
--- Delete from table, all null values in location (260 records)
+-- Delete all null values -in location- from the table (260 records)
 DELETE FROM real_estate_arg.all_properties
-WHERE location = '';
+WHERE location = '' OR location IS NULL;
 
 -- Add the 'province' column to be populated from the 'location' data
 ALTER TABLE real_estate_arg.all_properties
@@ -220,6 +220,7 @@ DELETE allp FROM real_estate_arg.all_properties allp
 	ON allp.province = argp.province_name
 WHERE argp.province_name IS NULL;
 
+-- Visually check list of provinces
 SELECT DISTINCT(province)
 FROM real_estate_arg.all_properties;
 
@@ -302,7 +303,7 @@ FROM real_estate_arg.all_properties
 GROUP BY neighbourhood_or_city
 ORDER BY percent_without_price DESC;
 
--- Remove properties without a price, since price is one of the main features needed in subsequent analyses
+-- Remove properties without a price, since price is one of the main features needed in subsequent analyses (1795 records)
 DELETE FROM real_estate_arg.all_properties
 WHERE price = 'Solicitar';
 
@@ -331,7 +332,7 @@ FROM real_estate_arg.all_properties
 GROUP BY neighbourhood_or_city
 ORDER BY ars_percent DESC;
 
--- Delete properties not expressed in USD (3 locations)
+-- Delete properties not expressed in USD (3 locations - 205 records)
 DELETE FROM real_estate_arg.all_properties
 WHERE price_currency = 'ARS';
 
@@ -355,21 +356,165 @@ FROM real_estate_arg.all_properties
 GROUP BY total_area_m2
 ORDER BY total_area_m2 DESC;
 
+-- Check for null values in total area by type of property
+SELECT property_type, total_area_m2, COUNT(total_area_m2)
+FROM real_estate_arg.all_properties
+WHERE total_area_m2 = '' OR total_area_m2 IS NULL
+ORDER BY property_type ASC;
+
 -- Format total area column as number
 ALTER TABLE real_estate_arg.all_properties
 MODIFY COLUMN total_area_m2 INT;
 
--- Visually check types of properties and the number of them by total area in m2
-SELECT total_area_m2, property_type, COUNT(total_area_m2)
+-- Save checkpoint with 'total_area_m2' column cleaned
+COMMIT;
+
+#--------------------------------------------------3.5---------------------------------------------------------------------------
+
+-- Check values for covered area in m2, originally formatted as text, ordering in descending order to validate it does not contain non-numeric values
+SELECT covered_area_m2
 FROM real_estate_arg.all_properties
-GROUP BY total_area_m2
-ORDER BY total_area_m2 DESC;
+GROUP BY covered_area_m2
+ORDER BY covered_area_m2 DESC;
+
+-- Check the number of null values for covered area, analyzing the property type and total area
+SELECT property_type, total_area_m2, covered_area_m2, COUNT(property_type)
+FROM real_estate_arg.all_properties
+WHERE covered_area_m2 = '' OR covered_area_m2 IS NULL
+GROUP BY property_type
+ORDER BY property_type ASC;
+
+-- Check for individual values to assess data
+SELECT property_type, total_area_m2, covered_area_m2, price
+FROM real_estate_arg.all_properties
+WHERE covered_area_m2 = '' OR covered_area_m2 IS NULL
+ORDER BY property_type ASC;
+
+/*
+'Chacra' refers mainly to land, therefore, a safe assumption is that the total_area_m2 is uncovered.
+Check other 'Chacra' values to understand what their covered_area_m2 is.
+*/
+SELECT property_type, province, total_area_m2, covered_area_m2
+FROM real_estate_arg.all_properties
+WHERE property_type = 'Chacra'
+ORDER BY province;
+
+/*
+Assumption: 'Chacra' properties default to 1 when no having no covered area.
+Default covered area with value 0 or '' to value 1.
+*/
+UPDATE real_estate_arg.all_properties
+SET covered_area_m2 = 1
+WHERE property_type = 'Chacra' AND covered_area_m2 = 0;
+
+-- Remove remaining blank records
+DELETE FROM real_estate_arg.all_properties
+WHERE covered_area_m2 = '' OR covered_area_m2 IS NULL;
+
+-- Format covered area column as number
+ALTER TABLE real_estate_arg.all_properties
+MODIFY COLUMN covered_area_m2 INT;
+
+-- Save checkpoint with 'covered_area_m2' column cleaned
+COMMIT;
+
+#--------------------------------------------------3.6---------------------------------------------------------------------------
+
+-- Check values for number of rooms, originally formatted as text, ordering in descending order to validate it does not contain non-numeric values
+SELECT room_number
+FROM real_estate_arg.all_properties
+GROUP BY room_number
+ORDER BY room_number DESC;
+
+-- Trim values
+UPDATE real_estate_arg.all_properties
+SET room_number = TRIM(room_number);
+
+-- Check for number of null values
+SELECT room_number, COUNT(room_number)
+FROM real_estate_arg.all_properties
+WHERE room_number = 0 OR room_number = '' OR room_number IS NULL;
+
+-- Check for number of null values by type of property
+SELECT property_type, room_number, COUNT(room_number)
+FROM real_estate_arg.all_properties
+WHERE room_number = 0 OR room_number = '' OR room_number IS NULL
+GROUP BY property_type
+ORDER BY COUNT(room_number) DESC;
+
+-- Check if properties with no number of rooms, have a covered area
+SELECT property_type, COUNT(covered_area_m2), COUNT(room_number)
+FROM real_estate_arg.all_properties
+WHERE room_number = 0
+GROUP BY property_type
+ORDER BY property_type;
+
+/*
+Assumption: All properties with covered area will have at least 1 room.
+Default blank records to 1 in number of rooms.
+*/
+UPDATE real_estate_arg.all_properties
+SET room_number = 1
+WHERE room_number = 0;
+
+-- Format number of rooms column as number
+ALTER TABLE real_estate_arg.all_properties
+MODIFY COLUMN room_number INT;
+
+-- Save checkpoint with 'room_number' column cleaned
+COMMIT;
+
+#--------------------------------------------------3.7---------------------------------------------------------------------------
+
+-- Check values for number of bathrooms, originally formatted as text, ordering in descending order to validate it does not contain non-numeric values
+SELECT bathroom_number
+FROM real_estate_arg.all_properties
+GROUP BY bathroom_number
+ORDER BY bathroom_number DESC;
+
+-- Check for number of null values
+SELECT bathroom_number, COUNT(bathroom_number)
+FROM real_estate_arg.all_properties
+WHERE bathroom_number = 0 OR bathroom_number = '';
+
+-- Check for number of null values by type of property
+SELECT property_type, bathroom_number, COUNT(bathroom_number)
+FROM real_estate_arg.all_properties
+WHERE bathroom_number = 0 OR bathroom_number = ''
+GROUP BY property_type
+ORDER BY COUNT(bathroom_number) DESC;
+
+-- Check if properties with no number of bathrooms, have a covered area
+SELECT property_type, COUNT(covered_area_m2), COUNT(bathroom_number)
+FROM real_estate_arg.all_properties
+WHERE bathroom_number = 0
+GROUP BY property_type
+ORDER BY COUNT(bathroom_number) DESC;
+
+/*
+Properties destined to personal and not commercial use, have at least 1 bathroom.
+Assumption: default to '1' all properties destined for living.
+Assumption: default to '0' all properties destined for commercial use.
+*/
+UPDATE real_estate_arg.all_properties
+SET bathroom_number =
+	CASE property_type
+		WHEN 'Casa' THEN 1
+        WHEN 'Departamento' THEN 1
+        WHEN 'PH' THEN 1
+        WHEN 'Edificio' THEN 1
+        WHEN 'Hotel' THEN 1
+        ELSE 0
+        END
+	WHERE bathroom_number = 0;
+
 
 
 
 # real_estate_arg.
 # real_estate_arg.all_properties
 
+-- delete location column??
 -- SELECT location, neighbourhood_or_province, province, COUNT(location)
 -- FROM real_estate_arg.all_properties
 -- GROUP BY location;
