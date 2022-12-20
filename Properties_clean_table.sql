@@ -1,5 +1,5 @@
 #---------------------------------------------------1----------------------------------------------------------------------------
--- Create new Database
+# Create new Database
 CREATE DATABASE IF NOT EXISTS  real_estate_arg;
 USE real_estate_arg;
 
@@ -17,27 +17,27 @@ CREATE TABLE all_properties AS
 			SELECT *
             FROM real_estate_arg.properties2;
 
--- Visually check the data in the new table
+# Visually check the data in the new table
 SELECT *
 FROM real_estate_arg.all_properties;
 
--- Verify all records have been imported (should return 42.940)
+# Verify all records have been imported (should return 42.940)
 SELECT COUNT(property_type)
 FROM real_estate_arg.all_properties;
 
 /* 
-After confirming all data is imported in one table, drop unnecessary (duplicate) tables.
+After confirmation all data is imported in one table, drop unnecessary (duplicate) tables.
 Step can be skipped if properly imported in one table, or extended if more than 2 tables were required for import.
 */
 DROP TABLE real_estate_arg.properties;
 DROP TABLE real_estate_arg.properties2;
 
--- Save checkpoint with imported data
+# Save checkpoint with imported data
 COMMIT;
 
 #---------------------------------------------------3----------------------------------------------------------------------------
 
--- Check data types of each column
+# Check data types of each column
 SHOW FIELDS
 FROM real_estate_arg.all_properties;
 
@@ -51,18 +51,18 @@ FROM real_estate_arg.all_properties
 GROUP BY property_type
 ORDER BY number_of_properties DESC;
 
--- Correct text format issue for properties with the name "Galp—n"
+# Correct text format issue for properties with the name "Galp—n"
 UPDATE real_estate_arg.all_properties
 SET property_type = REPLACE(property_type, "Galp—n", "Galpon");
 
--- Check for NULL values in property_type
+# Check for NULL values in property_type
 SELECT property_type, COUNT(property_type) AS number_of_properties
 FROM real_estate_arg.all_properties
 WHERE property_type = ''
 GROUP BY property_type
 ORDER BY number_of_properties DESC;
 
--- Save checkpoint after confirming "property_type" has valid values
+# Save checkpoint after confirming "property_type" has valid values
 COMMIT;
 
 #--------------------------------------------------3.2---------------------------------------------------------------------------
@@ -75,36 +75,40 @@ FROM real_estate_arg.all_properties
 GROUP BY location
 ORDER BY number_of_locations DESC;
 
--- Check the number of different locations
+# Check the number of different locations
 SELECT COUNT(DISTINCT(location))
 FROM real_estate_arg.all_properties;
 
--- Check for NULL values in location
+# Check for NULL values in location
 SELECT location, COUNT(location) AS number_of_locations
 FROM real_estate_arg.all_properties
 WHERE location = ''
 GROUP BY location
 ORDER BY number_of_locations DESC;
 
+<<<<<<< HEAD
 -- Delete all null values -in location- from the table (260 records)
+=======
+# Delete from table, all null values in location (260 records)
+>>>>>>> parent of 41927aa (Cleaned Price and Price_Currency columns; Added steps to README.md)
 DELETE FROM real_estate_arg.all_properties
 WHERE location = '' OR location IS NULL;
 
--- Add the 'province' column to be populated from the 'location' data
+# Add the 'province' column to be populated from the 'location' data
 ALTER TABLE real_estate_arg.all_properties
 ADD COLUMN province VARCHAR(255);
 
-	-- Extract the province for each of the locations (after the last comma)
+	# Extract the province for each of the locations (after the last comma)
 	UPDATE real_estate_arg.all_properties
 	SET province = TRIM(SUBSTRING_INDEX(location,',',-1));
 
-	-- Check provinces' names and number of records per each province
+	# Check provinces' names and number of records per each province
 	SELECT DISTINCT(province) AS province_name, COUNT(province)
 	FROM real_estate_arg.all_properties
     GROUP BY province_name
     ORDER BY province_name ASC;
 
--- Since too many locations have a text and number that is invalid, delete these specific strings from the province name
+# Since too many locations have a text and number that is invalid, delete these specific strings from the province name
 UPDATE real_estate_arg.all_properties
 SET province = REGEXP_REPLACE(
 	REGEXP_REPLACE(
@@ -120,17 +124,17 @@ SET province = REGEXP_REPLACE(
 'USD',
 '');
 
--- Trim text to standardize provinces' names
+# Trim text to standardize provinces' names
 UPDATE real_estate_arg.all_properties
 SET province = TRIM(province);
 
--- Check provinces' names and number of records per each province
+# Check provinces' names and number of records per each province
 	SELECT DISTINCT(province) AS province_name, COUNT(province) AS number_of_properties
 	FROM real_estate_arg.all_properties
     GROUP BY province_name
     ORDER BY number_of_properties DESC;
     
--- Manually create a table including Argentinean provinces, to check remaining provinces in 'all_properties' table are valid
+# Manually create a table including Argentinean provinces, to check remaining provinces in 'all_properties' table are valid
 CREATE TABLE arg_provinces(
 	province_name VARCHAR(255)
 	);
@@ -162,10 +166,10 @@ CREATE TABLE arg_provinces(
 		('Tucuman')
         ;
     
-		-- Visually check values
+		# Visually check values
 		SELECT * FROM real_estate_arg.arg_provinces;
 
--- Compare provinces in 'all_properties' against 'arg_provinces' to validate data and check number of records per province
+# Compare provinces in 'all_properties' against 'arg_provinces' to validate data and check number of records per province
 SELECT allp.province, argp.province_name, COUNT(allp.province) AS number_of_records
 FROM real_estate_arg.all_properties allp
 	JOIN real_estate_arg.arg_provinces argp
@@ -173,7 +177,7 @@ FROM real_estate_arg.all_properties allp
 GROUP BY allp.province
 ORDER BY number_of_records DESC;
 
--- Check non-matching provinces between 'all_properties' and 'arg_provinces' and show location
+# Check non-matching provinces between 'all_properties' and 'arg_provinces' and show location
 SELECT allp.location, allp.province, argp.province_name, COUNT(allp.province) AS number_of_records
 FROM real_estate_arg.all_properties allp
 	LEFT OUTER JOIN real_estate_arg.arg_provinces argp
@@ -214,7 +218,7 @@ Buenos Aires (116 records 'Pilar Del Este')
 	WHERE 
 		LOCATE ('Pilar Del Este', location);
 
--- Remove remaining records not identifiable within a known province (1851 records)
+# Remove remaining records not identifiable within a known province (1851 records)
 DELETE allp FROM real_estate_arg.all_properties allp
 	LEFT OUTER JOIN real_estate_arg.arg_provinces argp
 	ON allp.province = argp.province_name
@@ -224,14 +228,14 @@ WHERE argp.province_name IS NULL;
 SELECT DISTINCT(province)
 FROM real_estate_arg.all_properties;
 
--- Save checkpoint with 'province' column cleaned
+# Save checkpoint with 'province' column cleaned
 COMMIT;
 
--- Add the 'neighbourhood_or_city' column to be populated from the 'location' data
+# Add the 'neighbourhood_or_city' column to be populated from the 'location' data
 ALTER TABLE real_estate_arg.all_properties
 ADD COLUMN neighbourhood_or_city VARCHAR(255);
 
-	-- Extract the neighbourhood or city for each of the locations (between the last 2 commas)
+	# Extract the neighbourhood or city for each of the locations (between the last 2 commas)
 	UPDATE real_estate_arg.all_properties
 	SET neighbourhood_or_city = TRIM(
 									SUBSTRING_INDEX(
@@ -240,18 +244,18 @@ ADD COLUMN neighbourhood_or_city VARCHAR(255);
 										',', 1)
 									);
 
--- Visually check neighbourhood or city names
+# Visually check neighbourhood or city names
 SELECT DISTINCT(neighbourhood_or_city), province, COUNT(neighbourhood_or_city)
 FROM  real_estate_arg.all_properties
 GROUP BY neighbourhood_or_city
 ORDER BY COUNT(neighbourhood_or_city) DESC;
  
- -- Names seem to have invalid data, therefore check only neighbourhood or city names
+ # Names seem to have invalid data, therefore check only neighbourhood or city names
  SELECT DISTINCT(neighbourhood_or_city)
  FROM  real_estate_arg.all_properties
  ORDER BY neighbourhood_or_city ASC;
  
- -- Check neighbourhood or city names that contain numbers or odd text
+ # Check neighbourhood or city names that contain numbers or odd text
  SELECT DISTINCT(neighbourhood_or_city)
  FROM  real_estate_arg.all_properties
  WHERE 
@@ -259,7 +263,7 @@ ORDER BY COUNT(neighbourhood_or_city) DESC;
     LOCATE ('solicitar precio', neighbourhood_or_city)
  ORDER BY neighbourhood_or_city ASC;
  
- -- Manually replace invalid digits and text in the neighbourhood or city names
+ # Manually replace invalid digits and text in the neighbourhood or city names
  UPDATE real_estate_arg.all_properties
  SET
 	neighbourhood_or_city = REPLACE(
@@ -276,14 +280,15 @@ ORDER BY COUNT(neighbourhood_or_city) DESC;
 									'500',''),
                                 '0','');
  
- -- Check for blank values as the neighbourhood (no blanks)
+ # Check for blank values as the neighbourhood (no blanks)
 SELECT neighbourhood_or_city, COUNT(neighbourhood_or_city)
 FROM real_estate_arg.all_properties
 WHERE neighbourhood_or_city = '';
  
--- Save checkpoint with 'neighbourhood_or_city' column cleaned
+# Save checkpoint with 'neighbourhood_or_city' column cleaned
 COMMIT;
 
+<<<<<<< HEAD
 #--------------------------------------------------3.3---------------------------------------------------------------------------
 
 -- Check price data and its ocurrence, currently formatted as text, in descending order, to see if the field contains letters
@@ -518,3 +523,10 @@ SET bathroom_number =
 -- SELECT location, neighbourhood_or_province, province, COUNT(location)
 -- FROM real_estate_arg.all_properties
 -- GROUP BY location;
+=======
+--------------------------------------------------------------------------------------------------------------------------------
+
+
+# real_estate_arg.
+# real_estate_arg.all_properties
+>>>>>>> parent of 41927aa (Cleaned Price and Price_Currency columns; Added steps to README.md)
