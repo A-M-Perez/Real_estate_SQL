@@ -4,7 +4,7 @@
 
 ## Project objective
 
-.
+create dataset to Analyze pricing.
 
 Data source: https://www.remax.com.ar
 Dataset: xxx
@@ -45,13 +45,11 @@ Dataset: xxx
 *All steps detailed below have their corresponding reference to that in the commented code*
 
 >- Create Database (1)
+><br>
 >- Import REMAX properties data to table 'all_properties' (2) *(42.940 records)*
+><br>
 >- Clean 'all_properties' table (3)<br><br>
 >     Check format of all columns<br>
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> ec8e2fe94fef870da588d15159506bf459453c5f
 >
 >     'property_type' (3.1)
 >      > - Fix typos or text format issues
@@ -63,10 +61,7 @@ Dataset: xxx
 >      >    - Clean the data to leave only valid -and identifiable- provinces' names *(1851 records removed - 4.3%)*
 >      > - Add 'neighbourhood_or_city' field extracted from the 'location' field
 >      >    - Clean the data to leave only valid -and identifiable- neighbourhood or city names *(no records removed)*
-<<<<<<< HEAD
 >      > - Remove 'location' column (no further use in the dataset)
-=======
->>>>>>> ec8e2fe94fef870da588d15159506bf459453c5f
 >
 >     'price' (3.3)
 >      > - Remove non-numeric or blank values *(1795 records removed - 4.2%)*
@@ -90,7 +85,6 @@ Dataset: xxx
 >
 >     'bathroom_number' (3.7)
 >      > - Remove non-numeric, or invalid values *(no records removed)*
-<<<<<<< HEAD
 >      > - Default blank values to '1' if property is destined for living and '0' for commercial use *(343 records updated)*
 >      > - Format column as number
 >
@@ -100,30 +94,6 @@ Dataset: xxx
 >      > - Default blank expenses currency values to ARS and assign value of 1 to the corresponding expenses  *(208 records updated)*.
 >      > - Format column as number
 >
-=======
->      > - Default blank values to '1' if property is destined for living and '0' for commercial use 
->      > - Format column as number
->
->     'expenses': (3.8)<br>
->     'expenses_currency': (3.8)<br>
-=======
->     'property_type': fix typos/text format issues and remove blanks (3.1) *(no blanks)*<br>
->     'location': remove blanks *(260 records - 0.6%)*, add 'province' field extracted from the 'location' field and clean the data to leave only valid -and identifiable- provinces' names *(1851 records - 4.3%)*, add 'neighbourhood_or_city' field extracted from the 'location' field and clean the data to leave only valid -and identifiable- neighbourhood or city names *(no blanks)* (3.2) <br>
->     'price' - (3.3)<br> 
->     'price_currency' - (3.4)<br>
->     'total_area_m2' - (3.5)<br>
->>>>>>> parent of 41927aa (Cleaned Price and Price_Currency columns; Added steps to README.md)
-
-## Main SQL Statements applied
-
-**DDL applied**
-- CREATE DATABASE IF NOT EXISTS
-- USE
-
-**DDM applied**
-- SELECT
-- 
->>>>>>> ec8e2fe94fef870da588d15159506bf459453c5f
 
 ## How this project helped me grow:
 
