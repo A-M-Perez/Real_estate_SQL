@@ -52,45 +52,45 @@ This project aims to clean a raw dataset with real estate data -downloaded from 
 >     Check format of all columns<br>
 >
 >     'property_type' (3.1)
->      > - Fix typos or text format issues
->      > - Remove blanks *(no records removed)*
+>> - Fix typos or text format issues
+>> - Remove blanks *(no records removed)*
 >
 >     'location' (3.2)
->      > - Remove blanks *(260 records removed - 0.6%)*
->      > - Add 'province' field extracted from the 'location' field
->      >    - Clean the data to leave only valid -and identifiable- provinces' names *(1851 records removed - 4.3%)*
->      > - Add 'neighbourhood_or_city' field extracted from the 'location' field
->      >    - Clean the data to leave only valid -and identifiable- neighbourhood or city names *(no records removed)*
->      > - Remove 'location' column (no further use in the dataset)
+>> - Remove blanks *(260 records removed - 0.6%)*
+>> - Add 'province' field extracted from the 'location' field
+>>    - Clean the data to leave only valid -and identifiable- provinces' names *(1851 records removed - 4.3%)*
+>> - Add 'neighbourhood_or_city' field extracted from the 'location' field
+>>    - Clean the data to leave only valid -and identifiable- neighbourhood or city names *(no records removed)*
+>> - Remove 'location' column (no further use in the dataset)
 >
 >     'price' & 'price_currency' (3.3)
->      > - Remove non-numeric or blank price values *(1795 records removed - 4.2%)*
->      > - Remove records not expressed in USD *(205 records removed - 0.5%)*
->      > - Format column as number
+>> - Remove non-numeric or blank price values *(1795 records removed - 4.2%)*
+>> - Remove records not expressed in USD *(205 records removed - 0.5%)*
+>> - Format column as number
 >
 >     'total_area_m2' (3.4)
->      > - Remove non-numeric or blank values *(no records removed)*
->      > - Format column as number 
+>> - Remove non-numeric or blank values *(no records removed)*
+>> - Format column as number 
 >
 >     'covered_area_m2': (3.5)<br>
->      > - Remove non-numeric, blank, or invalid values *(7 records removed - 0.01%)*
->      > - Format column as number
+>> - Remove non-numeric, blank, or invalid values *(7 records removed - 0.01%)*
+>> - Format column as number
 >
 >     'room_number' (3.6)
->      > - Remove non-numeric, or invalid values *(no records removed)*
->      > - Default blank values to '1', since all properties with covered area, have at least 1 room *(2069 records updated)*
->      > - Format column as number
+>> - Remove non-numeric, or invalid values *(no records removed)*
+>> - Default blank values to '1', since all properties with covered area, have at least 1 room *(2069 records updated)*
+>> - Format column as number
 >
 >     'bathroom_number' (3.7)
->      > - Remove non-numeric, or invalid values *(no records removed)*
->      > - Default blank values to '1' if property is destined for living and '0' for commercial use *(343 records updated)*
->      > - Format column as number
+>> - Remove non-numeric, or invalid values *(no records removed)*
+>> - Default blank values to '1' if property is destined for living and '0' for commercial use *(343 records updated)*
+>> - Format column as number
 >
 >     'expenses' & 'expenses_currency' (3.8)
->      > - Remove non-numeric, or invalid values *(no records removed)*
->      > - Default 'N/A' values to 0 expenses in ARS for properties with no expenses *(22,923 records updated)*.
->      > - Default blank expenses currency values to ARS and assign value of 1 to the corresponding expenses  *(208 records updated)*.
->      > - Format column as number
+>> - Remove non-numeric, or invalid values *(no records removed)*
+>> - Default 'N/A' values to 0 expenses in ARS for properties with no expenses *(22,923 records updated)*.
+>> - Default blank expenses currency values to ARS and assign value of 1 to the corresponding expenses  *(208 records updated)*.
+>> - Format column as number
 >
 >&nbsp;
 
