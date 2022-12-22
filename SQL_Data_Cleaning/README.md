@@ -34,7 +34,7 @@ This project aims to clean a raw dataset with real estate data -downloaded from 
 
 ## Repository overview / structure
 
-├── Properties_clean_README.md\
+├── README.md\
 ├── Properties_clean_table.sql\
 ├── Data_source\
 &emsp;&emsp;├── Real_estate_ARG.csv

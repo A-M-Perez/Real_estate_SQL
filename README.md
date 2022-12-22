@@ -5,7 +5,9 @@ This project is comprised of 2 sub-projects:
 1. SQL_Data_Cleaning > REMAX Real Estate -Basic- EDA & Data Cleaning
 2. SQL_EDA > REMAX Real Estate EDA
 
-Each of these projects has its own README file outlining the project's objective, steps taken to develop it and lessons learned
+Overall, these projects aim to clean and perform EDA on a dataset for the Real Estate market in Argentina, managed mainly by REMAX (Real Estate Agent).
+
+Each of these projects has its own README file outlining the project's objective, steps taken to develop it and lessons learned.
 
 ## Repository overview / structure
 
@@ -18,5 +20,5 @@ Each of these projects has its own README file outlining the project's objective
 ├── SQL_EDA\
 &emsp;&emsp;├── README.md\
 &emsp;&emsp;├── Properties_EDA.sql\
-&emsp;&emsp;├── ...\
-&emsp;&emsp;&emsp;&emsp;├── ...
+&emsp;&emsp;├── Data_Source\
+&emsp;&emsp;&emsp;&emsp;├── REMAX_real_estate_ARG.csv
