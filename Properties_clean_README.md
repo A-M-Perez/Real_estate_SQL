@@ -1,20 +1,20 @@
-# REMAX Real Estate Data Cleaning & EDA
+# REMAX Real Estate -Basic- EDA & Data Cleaning
 
-.
+REMAX is one of the main Real Estate (Agent) companies in Argentina, with a significant portion of the market under scope and which manages most of its marketing through a website (https://www.remax.com.ar).
 
 ## Project objective
 
-create dataset to Analyze pricing.
+This project aims to clean a raw dataset with real estate data -downloaded from Remax's website- using SQL with MySQL.
 
-Data source: https://www.remax.com.ar
-Dataset: xxx
+*Data source*: https://www.remax.com.ar <br>
+*Dataset*: Real_estate_ARG.csv
 (downloaded with web scraper: https://github.com/A-M-Perez/Real_Estate_web_scraper)
 
-## Data description
+## (Raw) Data description
 
 - ***Property_Type:*** refers to the type of property defined by the website filters, such as "House", "Apartment", "Office", etc.
 
-- ***Location:*** refers to the neighbourhood and Province in which the property is located.
+- ***Location:*** refers to the neighbourhood/City and Province in which the property is located.
 
 - ***Price:*** price of the property.
 
@@ -34,16 +34,16 @@ Dataset: xxx
 
 ## Repository overview / structure
 
-├── README.md\
-├── .sql ()\
+├── Properties_clean_README.md\
+├── Properties_clean_table.sql\
 ├── Data_source\
-    ├── Real_estate_ARG.csv ()\
-    ├── .csv ()
+&emsp;&emsp;├── Real_estate_ARG.csv
 
-## Logical steps taken
+## Steps taken in the process
 
-*All steps detailed below have their corresponding reference to that in the commented code*
+*All steps detailed below have their corresponding reference to that in the commented SQL code*
 
+>&nbsp;
 >- Create Database (1)
 ><br>
 >- Import REMAX properties data to table 'all_properties' (2) *(42.940 records)*
@@ -63,12 +63,10 @@ Dataset: xxx
 >      >    - Clean the data to leave only valid -and identifiable- neighbourhood or city names *(no records removed)*
 >      > - Remove 'location' column (no further use in the dataset)
 >
->     'price' (3.3)
->      > - Remove non-numeric or blank values *(1795 records removed - 4.2%)*
->      > - Format column as number
->
->     'price_currency' (3.3)
+>     'price' & 'price_currency' (3.3)
+>      > - Remove non-numeric or blank price values *(1795 records removed - 4.2%)*
 >      > - Remove records not expressed in USD *(205 records removed - 0.5%)*
+>      > - Format column as number
 >
 >     'total_area_m2' (3.4)
 >      > - Remove non-numeric or blank values *(no records removed)*
@@ -94,12 +92,18 @@ Dataset: xxx
 >      > - Default blank expenses currency values to ARS and assign value of 1 to the corresponding expenses  *(208 records updated)*.
 >      > - Format column as number
 >
+>&nbsp;
 
 ## How this project helped me grow:
 
-**First lesson learned: NEVER do an UPDATE prior to checking its results with SELECT**
+> *First lesson learned: NEVER do an UPDATE prior to checking its results with SELECT*
 
+One of the main challenges was to work with real life data from a website, which had a lot of missing values and not thoroughly standardized data across postings. I applied basic Exploratory Data Analysis and cleaning techniques, basing some of it on domain knowledge but also researching market specificities.
+
+Of course, this project also helped me apply and therefore grow my SQL knowledge, having to revert to training documents and internet forums to troubleshoot different errors/situations.
+
+I also had the opportunity to commit and even revert files' updates using Git & Github, through different stages of the process.
 
 ## Final considerations
 
-xx
+As stated, this project aims at doing basic EDA and cleaning of a raw dataset, settling the basis for a deeper EDA and further analysis of these data, which is strictly necessary prior to move to a Visualization stage.
