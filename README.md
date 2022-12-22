@@ -11,12 +11,12 @@ Each of these projects has its own README file outlining the project's objective
 
 ├── README.md\
 ├── SQL_Data_Cleaning\
-&emsp;&emsp;├── Properties_clean_README.md\
+&emsp;&emsp;├── README.md\
 &emsp;&emsp;├── Properties_clean_table.sql\
 &emsp;&emsp;├── Data_source\
 &emsp;&emsp;&emsp;&emsp;├── Real_estate_ARG.csv\
 ├── SQL_EDA\
-&emsp;&emsp;├── Properties_EDA_README.md\
+&emsp;&emsp;├── README.md\
 &emsp;&emsp;├── Properties_EDA.sql\
 &emsp;&emsp;├── ...\
 &emsp;&emsp;&emsp;&emsp;├── ...
