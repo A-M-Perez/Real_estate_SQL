@@ -111,9 +111,15 @@ ORDER BY avg_price_m2 DESC;
 
 	/*
     Check next remaining smallest bin -'01. 0 to 0.5k'- with biggest values by province and neighbourhood or city, to assess reasonability of prices per location.
-    Low average prices per square meter do not seem reasonable. Will assess more data related to the size of the properties to determine whether records are outliers that need to be removed.
+    Low average prices per square meter do not seem reasonable. Will assess more data related to the size of the properties to determine whether records are outliers that need to be corrected/removed.
     */
-	SELECT province, neighbourhood_or_city, FORMAT(total_area_m2,0), FORMAT(price,0), FORMAT(avg_price_m2,0), COUNT(property_type) AS number_of_properties
+	SELECT 
+		province, 
+		neighbourhood_or_city, 
+        FORMAT(total_area_m2,0) AS total_area_m2, 
+        FORMAT(price,0) AS price, 
+        FORMAT(avg_price_m2,0) AS avg_price_m2, 
+        COUNT(property_type) AS number_of_properties
     FROM real_estate_arg.all_properties
     WHERE property_type = 'Departamento' AND bin = '01. 0 to 0.5k'
     GROUP BY province, neighbourhood_or_city
@@ -123,7 +129,14 @@ ORDER BY avg_price_m2 DESC;
     Check total and covered area. 'Departamento' refers to apartments, where in most cases the total area should match the covered area.
     Differences can be found due to errors when inputting the data, balconies -and similar areas-, or Real Estate Agents advertising common areas as part of the total area of the apartment.
     */
-    SELECT province, total_area_m2, covered_area_m2, FORMAT(covered_area_m2 / total_area_m2,2) AS percentage_covered_m2, avg_price_m2
+    SELECT 
+		province, 
+        neighbourhood_or_city,
+        total_area_m2, 
+        covered_area_m2, 
+        FORMAT(price,0) AS price, 
+        FORMAT(covered_area_m2 / total_area_m2,2) AS percentage_covered_m2, 
+        avg_price_m2
 	FROM real_estate_arg.all_properties
     WHERE property_type = 'Departamento' AND avg_price_m2 < 500
     ORDER BY (covered_area_m2 / total_area_m2) ASC;
@@ -139,38 +152,200 @@ ORDER BY avg_price_m2 DESC;
     DELETE FROM real_estate_arg.all_properties
     WHERE property_type = 'Departamento' AND avg_price_m2 < 300; 
 
+	-- Check lowest, highest, and average values of properties by province
+    SELECT 
+		province,
+        FORMAT(MIN(price),0) AS lowest_value,
+        FORMAT(AVG(price),0) AS avg_value,
+        FORMAT(MAX(price),0) AS highest_value
+	FROM real_estate_arg.all_properties
+    WHERE property_type = 'Departamento'
+    GROUP BY province
+    ORDER BY province ASC;
+
+	-- Check properties smaller than 17m2, which are usually the smallest apartments
+    SELECT province, neighbourhood_or_city, covered_area_m2, FORMAT(price,0) AS price
+    FROM real_estate_arg.all_properties
+    WHERE property_type = 'Departamento' AND covered_area_m2 <= 17
+	ORDER BY covered_area_m2 ASC;
+
+	-- Remove properties with a covered area smaller than 14m2 (5 records removed)
+    DELETE FROM real_estate_arg.all_properties
+    WHERE property_type = 'Departamento' AND covered_area_m2 < 14;
+
+	-- Check properties with a price lower than $30k, which is usually a really cheap value across the country
+    SELECT province, neighbourhood_or_city, FORMAT(price,0) AS price, covered_area_m2, avg_price_m2
+    FROM real_estate_arg.all_properties
+    WHERE property_type = 'Departamento' AND price < 30000
+    ORDER BY price ASC;
+
+	-- Check properties bigger than 300m2, which are usually the biggest apartments. Compare property's average price to average price of all apartments to assess reasonability of size and price based on neighbourhood or city.
+    SELECT 
+		province, 
+        neighbourhood_or_city, 
+        covered_area_m2, 
+        FORMAT(price,0) AS price, avg_price_m2, 
+		FORMAT(
+			(SELECT AVG(avg_price_m2)
+			FROM real_estate_arg.all_properties
+			WHERE property_type = 'Departamento'),0) AS avg_general
+    FROM real_estate_arg.all_properties
+    WHERE property_type = 'Departamento' AND covered_area_m2 > 300
+	ORDER BY covered_area_m2 DESC;
+
+	-- Visually check average price, total area, covered area and price per square meter of apartments by provinces
+    SELECT
+		province,
+        FORMAT(AVG(price),0) AS avg_price,
+        FORMAT(AVG(total_area_m2),0) AS avg_total_area_m2,
+        FORMAT(AVG(covered_area_m2),0) AS avg_covered_area_m2,
+        FORMAT(AVG(avg_price_m2),0) AS avg_price_m2
+	FROM real_estate_arg.all_properties
+    WHERE property_type = 'Departamento'
+    GROUP BY province
+    ORDER BY province ASC;
+
+-- REPLICATE SAME ANALYSIS FOR 'CASA', ADJUSTING PARAMETERS WHERE NEEDED
+
+-- Look at 'Casa' by size and price of the property, also considering the average price per square meter
+SELECT province, neighbourhood_or_city, total_area_m2, covered_area_m2, FORMAT(price,2) AS price, avg_price_m2, price_currency
+FROM real_estate_arg.all_properties
+WHERE property_type = 'Casa'
+GROUP BY avg_price_m2
+ORDER BY avg_price_m2 DESC;
+
+	/*
+    Segregate in 5 bins of average price per square meter:
+		- Between $0 and $1k
+        - Between $1k and $5k
+        - Between $5k and $10k
+		- Between $10k and $15k
+		- Over $15k
+    */
+	
+    -- Add column to assign each record to one of the identified bins
+    UPDATE real_estate_arg.all_properties
+    SET bin = CASE
+				WHEN avg_price_m2 >= 0 AND avg_price_m2 < 1000 THEN '01. 0 to 1k'
+				WHEN avg_price_m2 >= 1000 AND avg_price_m2 < 5000 THEN '02. 1k to 5k'
+				WHEN avg_price_m2 >= 5000 AND avg_price_m2 < 10000 THEN '03. 5k to 10k'
+                WHEN avg_price_m2 >= 10000 AND avg_price_m2 < 15000 THEN '04. 10k to 15k'
+				WHEN avg_price_m2 >= 15000 THEN '05. over 15k'
+				END
+	WHERE property_type = 'Casa';
+
+	-- Check bins and occurrences
+	SELECT bin, COUNT(bin)
+    FROM real_estate_arg.all_properties
+    WHERE property_type = 'Casa'
+    GROUP BY bin
+    ORDER BY bin ASC;
+
+	-- Remove records from the smallest bin with the biggest values (6 records removed)
+    DELETE FROM real_estate_arg.all_properties
+    WHERE property_type = 'Casa' AND avg_price_m2 >= 5000;
+
+	/*
+    Check remaining smallest bin -'02. 1k to 5k'- with biggest values by province and neighbourhood or city, to assess reasonability of prices per location.
+    Properties contained in the bin seem reasonable in price according to the neighbourhood. No need to remove.
+    */
+    SELECT province, neighbourhood_or_city, avg_price_m2, COUNT(property_type) AS number_of_properties
+    FROM real_estate_arg.all_properties
+    WHERE property_type = 'Casa' AND bin = '02. 1k to 5k'
+    GROUP BY province, neighbourhood_or_city
+    ORDER BY avg_price_m2 DESC;
+
+	/*
+    Check biggest bin -'01. 0 to 1k'- with lowest values by province and neighbourhood or city, to assess reasonability of prices per location.
+    Low average prices per square meter do not seem reasonable. Will assess more data related to the size of the properties to determine whether records are outliers that need to be corrected/removed.
+    */
+	SELECT 
+		province, 
+		neighbourhood_or_city, 
+        FORMAT(total_area_m2,0) AS total_area_m2, 
+        FORMAT(price,0) AS price, 
+        avg_price_m2, 
+        COUNT(property_type) AS number_of_properties
+    FROM real_estate_arg.all_properties
+    WHERE property_type = 'Casa' AND bin = '01. 0 to 1k'
+    GROUP BY province, neighbourhood_or_city
+    ORDER BY avg_price_m2 ASC;
+
+	/*
+    Check total and covered area. 'Casa' refers to houses, where the total area is usually bigger than the the covered area due to open spaces.
+    Houses with small covered areas compared to the total area, might be error inputs of 'land' properties without an actual house built in.
+    */
+    SELECT 
+		province, 
+        neighbourhood_or_city,
+        total_area_m2, 
+        covered_area_m2, 
+        FORMAT(price,0) AS price, 
+        FORMAT(covered_area_m2 / total_area_m2,2) AS percentage_covered_m2, 
+        avg_price_m2
+	FROM real_estate_arg.all_properties
+    WHERE property_type = 'Casa' AND covered_area_m2 < 20
+    ORDER BY (covered_area_m2 / total_area_m2) ASC;
+
+	-- Remove all houses with a covered area lower than 20 (25 records removed)
+    DELETE FROM real_estate_arg.all_properties
+    WHERE property_type = 'Casa' AND covered_area_m2 < 20; 
+
+	-- Check lowest, highest, and average values of properties by province
+    SELECT 
+		province,
+        FORMAT(MIN(price),0) AS lowest_value,
+        FORMAT(AVG(price),0) AS avg_value,
+        FORMAT(MAX(price),0) AS highest_value
+	FROM real_estate_arg.all_properties
+    WHERE property_type = 'Casa'
+    GROUP BY province
+    ORDER BY province ASC;
+
+	-- Check properties smaller than 20m2, which are usually the smallest Houses
+    SELECT province, neighbourhood_or_city, covered_area_m2, FORMAT(price,0) AS price
+    FROM real_estate_arg.all_properties
+    WHERE property_type = 'Casa' AND covered_area_m2 < 20
+	ORDER BY covered_area_m2 ASC;
+
+	-- Check properties with a price lower than $30k and an average price per square meter lower than $500, which is usually a really cheap value across the country
+    SELECT province, neighbourhood_or_city, FORMAT(price,0) AS price, covered_area_m2, avg_price_m2
+    FROM real_estate_arg.all_properties
+    WHERE property_type = 'Casa' AND price < 30000 AND avg_price_m2 < 500
+    ORDER BY price ASC;
+    
+    -- Remove all records per search above (190 records removed)
+    DELETE FROM real_estate_arg.all_properties
+    WHERE property_type = 'Casa' AND price < 30000 AND avg_price_m2 < 500;
+
+	-- Check properties bigger than 1000m2, which are really big houses. Compare property's average price to average price of all houses to assess reasonability of size and price based on neighbourhood or city.
+    SELECT 
+		province, 
+        neighbourhood_or_city, 
+        covered_area_m2, 
+        FORMAT(price,0) AS price, avg_price_m2, 
+		FORMAT(
+			(SELECT AVG(avg_price_m2)
+			FROM real_estate_arg.all_properties
+			WHERE property_type = 'Casa'),0) AS avg_general
+    FROM real_estate_arg.all_properties
+    WHERE property_type = 'Casa' AND covered_area_m2 > 1000
+	ORDER BY covered_area_m2 DESC;
+
+	-- Visually check average price, total area, covered area and price per square meter of apartments by provinces
+    SELECT
+		province,
+        FORMAT(AVG(price),0) AS avg_price,
+        FORMAT(AVG(total_area_m2),0) AS avg_total_area_m2,
+        FORMAT(AVG(covered_area_m2),0) AS avg_covered_area_m2,
+        FORMAT(AVG(avg_price_m2),0) AS avg_price_m2
+	FROM real_estate_arg.all_properties
+    WHERE property_type = 'Departamento'
+    GROUP BY province
+    ORDER BY province ASC;
 
 
 -- real_estate_arg.all_properties
-
--- Visually check types of properties and the number of them by total area in m2
-SELECT property_type, total_area_m2, COUNT(property_type)
-FROM real_estate_arg.all_properties
-GROUP BY total_area_m2
-ORDER BY total_area_m2 DESC;
-
--- Detect and address possible anomalies in the data, analyzing each property type separately.
-
--- Apartments
-	/*
-    Check provinces with biggest apartments, to understand if they have more space and therefore properties could be bigger due to it.
-    Visually check reasonability of sizes between the biggest apartments in different provinces.
-    */
-	SELECT property_type, MAX(total_area_m2), province
-	FROM real_estate_arg.all_properties
-	WHERE property_type = 'Departamento'
-    GROUP BY province
-    ORDER BY MAX(total_area_m2) DESC;
-
-	-- Buenos Aires comes 6th in the list, with its biggest apartment being 740m2. Considering this is a really big apartment but reasonable to exists, set it as 'benchmark' to further analyze the dataset
-     
-    -- Check for bigger apartments in the rest of the provinces.
-	SELECT province, neighbourhood_or_city, total_area_m2, covered_area_m2, room_number, price, (price / total_area_m2) AS avg_m2_price
-    FROM real_estate_arg.all_properties
-    WHERE property_type = 'Departamento' AND total_area_m2 > 740
-    ORDER BY province ASC, total_area_m2 DESC;
-
-
 
 
 
