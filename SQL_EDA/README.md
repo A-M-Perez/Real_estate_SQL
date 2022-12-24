@@ -6,8 +6,20 @@ xx
 
 xx
 
-*Data source*: <br>
-*Dataset*: 
+*Dataset*: REMAX_real_estate_ARG.csv
+*Data source*: https://github.com/A-M-Perez/Real_estate_SQL/tree/main/SQL_Data_Cleaning
+
+
+*Dataset*: snic-provincias.csv
+*Data source*: https://datos.gob.ar/ar/dataset/seguridad-estadisticas-criminales-republica-argentina-por-provincias-departamentos/archivo/seguridad_2.1<br>
+
+
+*Dataset*: population_and_km2_area (manual table in SQL code)
+*Data source*:https://www.ign.gob.ar/NuestrasActividades/Geografia/DatosArgentina/DivisionPolitica
+
+*Dataset*: indicadores-provinciales.csv
+*Data source*:https://www.economia.gob.ar/datos/
+
 
 ## Data dictionary
 
