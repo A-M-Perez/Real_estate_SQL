@@ -205,7 +205,7 @@ ORDER BY avg_price_m2 DESC;
     GROUP BY province
     ORDER BY province ASC;
 
--- REPLICATE SAME ANALYSIS FOR 'CASA', ADJUSTING PARAMETERS WHERE NEEDED
+-- REPLICATE SAME ANALYSIS FOR 'Casa', ADJUSTING PARAMETERS WHERE NEEDED
 
 -- Look at 'Casa' by size and price of the property, also considering the average price per square meter
 SELECT province, neighbourhood_or_city, total_area_m2, covered_area_m2, FORMAT(price,2) AS price, avg_price_m2, price_currency
@@ -318,21 +318,53 @@ ORDER BY avg_price_m2 DESC;
     DELETE FROM real_estate_arg.all_properties
     WHERE property_type = 'Casa' AND price < 30000 AND avg_price_m2 < 500;
 
-	-- Check properties bigger than 1000m2, which are really big houses. Compare property's average price to average price of all houses to assess reasonability of size and price based on neighbourhood or city.
+	-- Check properties bigger than 1000m2, which can be considered significantly big houses. Compare property's average price to average price of all houses (by neighbourhood or city) to assess reasonability of size and price.
     SELECT 
-		province, 
-        neighbourhood_or_city, 
-        covered_area_m2, 
-        FORMAT(price,0) AS price, avg_price_m2, 
+		ap.province, 
+        ap.neighbourhood_or_city, 
+        ap.covered_area_m2, 
+        FORMAT(ap.price,0) AS price,
+        ap.avg_price_m2, 
 		FORMAT(
-			(SELECT AVG(avg_price_m2)
-			FROM real_estate_arg.all_properties
-			WHERE property_type = 'Casa'),0) AS avg_general
-    FROM real_estate_arg.all_properties
-    WHERE property_type = 'Casa' AND covered_area_m2 > 1000
+			avg_by_neighbourhood_or_city.price_m2       
+			,0) AS avg_neighbourhood_or_city,
+		FORMAT(((ap.avg_price_m2 - avg_by_neighbourhood_or_city.price_m2) / ap.avg_price_m2) * 100,2) AS avg_price_var
+    FROM 
+		real_estate_arg.all_properties ap,
+		(SELECT neighbourhood_or_city, AVG(avg_price_m2) AS price_m2
+				FROM real_estate_arg.all_properties
+				WHERE property_type = 'Casa'
+				GROUP BY neighbourhood_or_city) AS avg_by_neighbourhood_or_city
+    WHERE 
+		property_type = 'Casa' AND 
+        covered_area_m2 > 1000 AND
+        ap.neighbourhood_or_city = avg_by_neighbourhood_or_city.neighbourhood_or_city
 	ORDER BY covered_area_m2 DESC;
 
-	-- Visually check average price, total area, covered area and price per square meter of apartments by provinces
+	-- Add an ID column to each property in the table
+    ALTER TABLE real_estate_arg.all_properties
+    ADD COLUMN property_id INT AUTO_INCREMENT PRIMARY KEY;
+    
+	-- Remove all records which absolute value variance from the average price benchmark for the neighbourhood or city is over 50% (10 records removed)
+	    DELETE FROM real_estate_arg.all_properties
+        WHERE property_id IN (
+			SELECT property_id FROM (
+				SELECT ap.property_id
+				FROM 
+				real_estate_arg.all_properties ap,
+				(SELECT neighbourhood_or_city, AVG(avg_price_m2) AS price_m2
+						FROM real_estate_arg.all_properties
+						WHERE property_type = 'Casa'
+						GROUP BY neighbourhood_or_city) AS avg_by_neighbourhood_or_city
+				WHERE 
+					property_type = 'Casa' AND 
+					covered_area_m2 > 1000 AND
+					ap.neighbourhood_or_city = avg_by_neighbourhood_or_city.neighbourhood_or_city
+					AND ABS(((ap.avg_price_m2 - avg_by_neighbourhood_or_city.price_m2) / ap.avg_price_m2) * 100) > 50
+                    ) AS t2
+		);
+  
+	-- Visually check average price, total area, covered area and price per square meter of houses by provinces
     SELECT
 		province,
         FORMAT(AVG(price),0) AS avg_price,
@@ -340,35 +372,178 @@ ORDER BY avg_price_m2 DESC;
         FORMAT(AVG(covered_area_m2),0) AS avg_covered_area_m2,
         FORMAT(AVG(avg_price_m2),0) AS avg_price_m2
 	FROM real_estate_arg.all_properties
-    WHERE property_type = 'Departamento'
+    WHERE property_type = 'Casa'
     GROUP BY province
     ORDER BY province ASC;
 
+-- REPLICATE SAME ANALYSIS FOR 'PH', ADJUSTING PARAMETERS WHERE NEEDED
 
--- real_estate_arg.all_properties
+-- Look at 'PH' by size and price of the property, also considering the average price per square meter
+SELECT province, neighbourhood_or_city, total_area_m2, covered_area_m2, FORMAT(price,2) AS price, avg_price_m2, price_currency
+FROM real_estate_arg.all_properties
+WHERE property_type = 'PH'
+GROUP BY avg_price_m2
+ORDER BY avg_price_m2 DESC;
 
+	/*
+    Segregate in 5 bins of average price per square meter:
+		- Between $0 and $500
+        - Between $500 and $1k
+        - Between $1k and $2k
+		- Between $2k and $3k
+		- Over $3k
+    */
+	
+    -- Add column to assign each record to one of the identified bins
+    UPDATE real_estate_arg.all_properties
+    SET bin = CASE
+				WHEN avg_price_m2 >= 0 AND avg_price_m2 < 500 THEN '01. 0 to 500'
+				WHEN avg_price_m2 >= 500 AND avg_price_m2 < 1000 THEN '02. 500 to 1k'
+				WHEN avg_price_m2 >= 1000 AND avg_price_m2 < 2000 THEN '03. 1k to 2k'
+                WHEN avg_price_m2 >= 2000 AND avg_price_m2 < 3000 THEN '04. 2k to 3k'
+				WHEN avg_price_m2 >= 3000 THEN '05. over 3k'
+				END
+	WHERE property_type = 'PH';
 
+	-- Check bins and occurrences
+	SELECT bin, COUNT(bin)
+    FROM real_estate_arg.all_properties
+    WHERE property_type = 'PH'
+    GROUP BY bin
+    ORDER BY bin ASC;
 
+	-- Remove records from the smallest bin with the biggest values (2 records removed)
+    DELETE FROM real_estate_arg.all_properties
+    WHERE property_type = 'PH' AND avg_price_m2 >= 3000;
 
+	/*
+    Check remaining smallest bin -'04. 2k to 3k'- with biggest values by province and neighbourhood or city, to assess reasonability of prices per location.
+    Properties contained in the bin seem reasonable in price according to the neighbourhood. No need to remove.
+    */
+    SELECT province, neighbourhood_or_city, avg_price_m2, COUNT(property_type) AS number_of_properties
+    FROM real_estate_arg.all_properties
+    WHERE property_type = 'PH' AND bin = '04. 2k to 3k'
+    GROUP BY province, neighbourhood_or_city
+    ORDER BY avg_price_m2 DESC;
 
+	/*
+    Check next smallest bin -'01. 0 to 500'- with lowest values by province and neighbourhood or city, to assess reasonability of prices per location.
+    Low average prices per square meter do not seem reasonable. Will assess more data related to the size of the properties to determine whether records are outliers that need to be corrected/removed.
+    */
+	SELECT 
+		province, 
+		neighbourhood_or_city, 
+        FORMAT(total_area_m2,0) AS total_area_m2, 
+        FORMAT(price,0) AS price, 
+        avg_price_m2, 
+        COUNT(property_type) AS number_of_properties
+    FROM real_estate_arg.all_properties
+    WHERE property_type = 'PH' AND bin = '01. 0 to 500'
+    GROUP BY province, neighbourhood_or_city
+    ORDER BY avg_price_m2 ASC;
 
+	/*
+    Check total and covered area. 'PH' refers to apartments on ground floor, more similar to a house than to an apartment, where the total area is usually bigger than the the covered area due to open spaces.
+    PH's with small covered areas compared to the total area, might be error inputs where common areas are being included in the total area for the specific property.
+    */
+    SELECT 
+		property_id,
+		province, 
+        neighbourhood_or_city,
+        total_area_m2, 
+        covered_area_m2, 
+        FORMAT(price,0) AS price, 
+        FORMAT(covered_area_m2 / total_area_m2,2) AS percentage_covered_m2, 
+        avg_price_m2
+	FROM real_estate_arg.all_properties
+    WHERE property_type = 'PH' AND (covered_area_m2 / total_area_m2) < 0.3
+    ORDER BY (covered_area_m2 / total_area_m2) ASC;
+    
+    -- Remove item not reasonable in terms of data disclosed (1 record removed)
+    DELETE FROM real_estate_arg.all_properties
+    WHERE property_id = 34854;
 
+	-- Check lowest, highest, and average values of properties by province
+    SELECT 
+		province,
+        FORMAT(MIN(price),0) AS lowest_value,
+        FORMAT(AVG(price),0) AS avg_value,
+        FORMAT(MAX(price),0) AS highest_value
+	FROM real_estate_arg.all_properties
+    WHERE property_type = 'PH'
+    GROUP BY province
+    ORDER BY province ASC;
 
+	-- Check properties with a price lower than $25k and an average price per square meter lower than $300, which is usually a really cheap value across the country
+    SELECT property_id, province, neighbourhood_or_city, FORMAT(price,0) AS price, covered_area_m2, avg_price_m2
+    FROM real_estate_arg.all_properties
+    WHERE property_type = 'PH' AND price < 25000 AND avg_price_m2 < 300
+    ORDER BY price ASC;
+    
+    -- Remove all records with a price lower than $25k and an average price per square meter of $200 (12 records removed)
+    DELETE FROM real_estate_arg.all_properties
+    WHERE property_type = 'PH' AND price < 25000 AND avg_price_m2 < 200;
 
+	-- Check properties bigger than 400m2, which can be considered significantly big PHs. Compare property's average price to average price of all PHs (by neighbourhood or city) to assess reasonability of size and price.
+    SELECT 
+		ap.province, 
+        ap.neighbourhood_or_city, 
+        ap.covered_area_m2, 
+        FORMAT(ap.price,0) AS price,
+        ap.avg_price_m2, 
+		FORMAT(
+			avg_by_neighbourhood_or_city.price_m2       
+			,0) AS avg_neighbourhood_or_city,
+		FORMAT(((ap.avg_price_m2 - avg_by_neighbourhood_or_city.price_m2) / ap.avg_price_m2) * 100,2) AS avg_price_var
+    FROM 
+		real_estate_arg.all_properties ap,
+		(SELECT neighbourhood_or_city, AVG(avg_price_m2) AS price_m2
+				FROM real_estate_arg.all_properties
+				WHERE property_type = 'PH'
+				GROUP BY neighbourhood_or_city) AS avg_by_neighbourhood_or_city
+    WHERE 
+		property_type = 'PH' AND 
+        covered_area_m2 > 400 AND
+        ap.neighbourhood_or_city = avg_by_neighbourhood_or_city.neighbourhood_or_city
+	ORDER BY covered_area_m2 DESC;
+    
+	-- Remove all records which absolute value variance from the average price benchmark for the neighbourhood or city is over 50% (9 records removed)
+	    DELETE FROM real_estate_arg.all_properties
+        WHERE property_id IN (
+			SELECT property_id FROM (
+				SELECT ap.property_id
+				FROM 
+				real_estate_arg.all_properties ap,
+				(SELECT neighbourhood_or_city, AVG(avg_price_m2) AS price_m2
+						FROM real_estate_arg.all_properties
+						WHERE property_type = 'PH'
+						GROUP BY neighbourhood_or_city) AS avg_by_neighbourhood_or_city
+				WHERE 
+					property_type = 'PH' AND 
+					covered_area_m2 > 400 AND
+					ap.neighbourhood_or_city = avg_by_neighbourhood_or_city.neighbourhood_or_city
+					AND ABS(((ap.avg_price_m2 - avg_by_neighbourhood_or_city.price_m2) / ap.avg_price_m2) * 100) > 50
+                    ) AS t2
+		);
+  
+	-- Visually check average price, total area, covered area and price per square meter of PHs by provinces
+    SELECT
+		province,
+        FORMAT(AVG(price),0) AS avg_price,
+        FORMAT(AVG(total_area_m2),0) AS avg_total_area_m2,
+        FORMAT(AVG(covered_area_m2),0) AS avg_covered_area_m2,
+        FORMAT(AVG(avg_price_m2),0) AS avg_price_m2
+	FROM real_estate_arg.all_properties
+    WHERE property_type = 'PH'
+    GROUP BY province
+    ORDER BY province ASC;
 
+/*
+To perform some extra EDA, I have pulled the year 2020's -latest available- population information in Argentina by province.
+Since data is not contemporary, this section is only aimed at applying JOINs while peforming EDA.
+*/
 
-
-
-
-
-
-
-
-
-
-
-
-
+-- Manually create and populate data for the year 2020 in Argentina
 CREATE TABLE population_and_km2_area (
 	province VARCHAR(255),
     population INT, 
@@ -402,5 +577,30 @@ VALUES
     ('Tierra del Fuego, Antartida e Islas del Atlantico Sur', 173715, 910324.4),
     ('Tucuman', 1694656, 22592.1);
 
+-- Visually check table
 SELECT *
-FROM real_estate_arg.population_and_km2_area;
+FROM real_estate_arg.population_and_km2_area
+ORDER BY population DESC;
+
+-- Add column with population density
+ALTER TABLE real_estate_arg.population_and_km2_area
+ADD COLUMN population_density INT;
+
+-- Add values to the 'population_density' column (people per square kilometer)
+UPDATE real_estate_arg.population_and_km2_area
+SET population_density = (population / total_area_km2);
+
+-- Visually check table
+SELECT *
+FROM real_estate_arg.population_and_km2_area
+ORDER BY population_density DESC;
+
+-- Check total population, area and density in Argentina. 'Antartida' is almost inhabited and therefore excluded from the agreggation.
+SELECT 
+	FORMAT(SUM(population),0) AS population, 
+    FORMAT(SUM(total_area_km2),0) AS total_area_km2,
+    FORMAT(SUM(population_density),0) AS population_density
+FROM real_estate_arg.population_and_km2_area
+WHERE province != 'Tierra del Fuego, Antartida e Islas del Atlantico Sur';
+
+-- real_estate_arg.all_properties
