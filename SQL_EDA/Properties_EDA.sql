@@ -538,6 +538,11 @@ ORDER BY avg_price_m2 DESC;
     GROUP BY province
     ORDER BY province ASC;
 
+-- Remove unused columns
+ALTER TABLE real_estate_arg.all_properties
+	DROP COLUMN bin,
+	DROP COLUMN property_id;
+
 /*
 To perform some extra EDA, I have pulled the year 2020's -latest available- population information in Argentina by province.
 Since data is not contemporary, this section is only aimed at applying JOINs while peforming EDA.
@@ -603,4 +608,112 @@ SELECT
 FROM real_estate_arg.population_and_km2_area
 WHERE province != 'Tierra del Fuego, Antartida e Islas del Atlantico Sur';
 
--- real_estate_arg.all_properties
+-- Check properties in the market by province and population
+SELECT ap.province, FORMAT(p_a.population,0) AS population, FORMAT(COUNT(property_type),0) AS property_number
+FROM real_estate_arg.all_properties ap
+	JOIN real_estate_arg.population_and_km2_area p_a
+		ON ap.province = p_a.province
+GROUP BY province
+ORDER BY province;
+
+-- Check proportion of properties in the market and of population for each province, relative to each total
+SELECT 
+	ap.province,
+	FORMAT((COUNT(ap.property_type) / properties_total.total) * 100,2) AS market_share,
+    FORMAT((p_a.population / population_total.total) * 100,2) AS population_percentage
+FROM 
+	real_estate_arg.all_properties ap
+		JOIN real_estate_arg.population_and_km2_area p_a
+		ON ap.province = p_a.province,
+	(SELECT COUNT(property_type) AS total
+    FROM real_estate_arg.all_properties) AS properties_total,
+	(SELECT SUM(population) AS total
+    FROM real_estate_arg.population_and_km2_area) AS population_total
+GROUP BY ap.province
+ORDER BY ap.province ASC;
+
+-- Check average total area of properties by province and the province's total area
+SELECT
+	ap.province,
+    p_a.total_area_km2,
+    AVG(ap.total_area_m2) AS avg_total_area_m2
+FROM real_estate_arg.all_properties ap
+	JOIN real_estate_arg.population_and_km2_area p_a
+    ON ap.province = p_a.province
+GROUP BY ap.province
+ORDER BY p_a.total_area_km2 DESC, avg_total_area_m2 DESC;
+
+#------------------------------- CREATING VIEWS -------------------------------
+
+-- To show all apartments' information as well as the province's population
+CREATE OR REPLACE VIEW apartments AS
+	SELECT ap.*, p_a.population AS province_population
+	FROM real_estate_arg.all_properties ap
+		JOIN real_estate_arg.population_and_km2_area p_a
+        ON ap.province = p_a.province
+    WHERE property_type = 'Departamento';
+
+SELECT * FROM apartments;
+
+-- To show all properties which price is below market average and size is above market average, considering the property type and neighbourhood
+CREATE OR REPLACE VIEW opportunities AS  
+	SELECT ap.*
+	FROM 
+		real_estate_arg.all_properties ap,
+		(SELECT 
+			property_type, 
+			neighbourhood_or_city, 
+			AVG(price) AS avg_price_neighbourhood_or_city
+		FROM real_estate_arg.all_properties
+		GROUP BY property_type, neighbourhood_or_city) AS avg_prices,
+		(SELECT
+			property_type,
+			neighbourhood_or_city,
+			AVG(total_area_m2) AS avg_area_neighbourhood_or_city
+		FROM real_estate_arg.all_properties
+		GROUP BY property_type, neighbourhood_or_city) AS avg_area
+	WHERE 
+		(ap.property_type = avg_prices.property_type AND ap.property_type = avg_area.property_type)
+		AND
+		(ap.neighbourhood_or_city = avg_prices.neighbourhood_or_city AND ap.neighbourhood_or_city = avg_area.neighbourhood_or_city)
+		AND
+		ap.price < avg_prices.avg_price_neighbourhood_or_city
+		AND
+		ap.total_area_m2 > avg_area.avg_area_neighbourhood_or_city;
+        
+SELECT * FROM opportunities;
+
+#------------------------------- CREATING A STORED PROCEDURE -------------------------------
+
+# (same query as above)
+-- To find opportunities in the market, where properties have a price that is below market average and a size that is above market average, considering the property type and neighbourhood
+DELIMITER $$
+CREATE PROCEDURE find_opportunities()
+BEGIN
+	SELECT ap.*
+		FROM 
+			real_estate_arg.all_properties ap,
+			(SELECT 
+				property_type, 
+				neighbourhood_or_city, 
+				AVG(price) AS avg_price_neighbourhood_or_city
+			FROM real_estate_arg.all_properties
+			GROUP BY property_type, neighbourhood_or_city) AS avg_prices,
+			(SELECT
+				property_type,
+				neighbourhood_or_city,
+				AVG(total_area_m2) AS avg_area_neighbourhood_or_city
+			FROM real_estate_arg.all_properties
+			GROUP BY property_type, neighbourhood_or_city) AS avg_area
+		WHERE 
+			(ap.property_type = avg_prices.property_type AND ap.property_type = avg_area.property_type)
+			AND
+			(ap.neighbourhood_or_city = avg_prices.neighbourhood_or_city AND ap.neighbourhood_or_city = avg_area.neighbourhood_or_city)
+			AND
+			ap.price < avg_prices.avg_price_neighbourhood_or_city
+			AND
+			ap.total_area_m2 > avg_area.avg_area_neighbourhood_or_city;
+END$$
+DELIMITER ;
+
+CALL real_estate_arg.find_opportunities();
