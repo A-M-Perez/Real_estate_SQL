@@ -717,3 +717,19 @@ END$$
 DELIMITER ;
 
 CALL real_estate_arg.find_opportunities();
+
+-- To find properties according to property type, price and total area in square meters
+DELIMITER $$
+CREATE PROCEDURE find_property(IN property VARCHAR(255), IN property_price INT, IN property_area_m2 INT)
+	BEGIN
+		SELECT *
+        FROM real_estate_arg.all_properties
+        WHERE
+			property_type = property AND
+            price <= property_price AND
+            total_area_m2 >= property_area_m2
+		ORDER BY price DESC;
+	END $$
+DELIMITER ;
+
+CALL find_property('Departamento', 70000, 120);
