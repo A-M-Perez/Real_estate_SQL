@@ -2,6 +2,8 @@
 SELECT *
 FROM real_estate_arg.all_properties;
 
+#---------------------------------------------------1----------------------------------------------------------------------------
+
 /*
 Check number of property types and their share in the total market
 	- 'Departamento' 50.54%
@@ -20,6 +22,8 @@ FROM real_estate_arg.all_properties AS t1,
     FROM real_estate_arg.all_properties) AS t2
 GROUP BY property_type
 ORDER BY (COUNT(t1.property_type) / t2.total) * 100 DESC;
+
+#---------------------------------------------------2----------------------------------------------------------------------------
 
 -- Check the average price of property types -only including the top 3 market share properties- by province
 SELECT 
@@ -57,6 +61,8 @@ SELECT total_area_m2, price, avg_price_m2
 FROM real_estate_arg.all_properties;
 
 -- Individually check property types 'Departamento', 'Casa' and 'PH' to identify outliers
+
+#---------------------------------------------------3----------------------------------------------------------------------------
 
 -- Look at 'Departamento' by size and price of the property, also considering the average price per square meter
 SELECT province, neighbourhood_or_city, total_area_m2, covered_area_m2, FORMAT(price,2), FORMAT(avg_price_m2,2), price_currency
@@ -204,6 +210,8 @@ ORDER BY avg_price_m2 DESC;
     WHERE property_type = 'Departamento'
     GROUP BY province
     ORDER BY province ASC;
+
+#---------------------------------------------------4----------------------------------------------------------------------------
 
 -- REPLICATE SAME ANALYSIS FOR 'Casa', ADJUSTING PARAMETERS WHERE NEEDED
 
@@ -376,6 +384,8 @@ ORDER BY avg_price_m2 DESC;
     GROUP BY province
     ORDER BY province ASC;
 
+#---------------------------------------------------5----------------------------------------------------------------------------
+
 -- REPLICATE SAME ANALYSIS FOR 'PH', ADJUSTING PARAMETERS WHERE NEEDED
 
 -- Look at 'PH' by size and price of the property, also considering the average price per square meter
@@ -538,10 +548,14 @@ ORDER BY avg_price_m2 DESC;
     GROUP BY province
     ORDER BY province ASC;
 
+#---------------------------------------------------6----------------------------------------------------------------------------
+
 -- Remove unused columns
 ALTER TABLE real_estate_arg.all_properties
 	DROP COLUMN bin,
 	DROP COLUMN property_id;
+
+#---------------------------------------------------7----------------------------------------------------------------------------
 
 /*
 To perform some extra EDA, I have pulled the year 2020's -latest available- population information in Argentina by province.
@@ -643,6 +657,7 @@ FROM real_estate_arg.all_properties ap
 GROUP BY ap.province
 ORDER BY p_a.total_area_km2 DESC, avg_total_area_m2 DESC;
 
+#---------------------------------------------------8----------------------------------------------------------------------------
 #------------------------------- CREATING VIEWS -------------------------------
 
 -- To show all apartments' information as well as the province's population
@@ -683,6 +698,7 @@ CREATE OR REPLACE VIEW opportunities AS
         
 SELECT * FROM opportunities;
 
+#---------------------------------------------------9----------------------------------------------------------------------------
 #------------------------------- CREATING A STORED PROCEDURE -------------------------------
 
 # (same query as above)
