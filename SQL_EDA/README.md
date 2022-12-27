@@ -47,9 +47,9 @@ Through SQL statements, I intend to understand and clean -where necessary- this 
 
 >&nbsp;
 >- Understand market share of property types (1)
-><br>
+>
 >> *'Departamento', 'Casa', and 'PH' add up to 93.77% of properties being sold. Following steps only focus on these 3 properties*
->&nbsp;
+>
 >- Understand pricing and size of properties (2)
 >- Individually analyze and understand properties: 'Departamento' (3)
 >- Individually analyze and understand properties: 'Casa' (4)
