@@ -62,8 +62,6 @@ Through SQL statements, I intend to understand and clean -where necessary- this 
 
 ## How this project helped me grow:
 
-> *First lesson learned: NEVER do an UPDATE or DELETE prior to checking its results with SELECT*
-
 One of the main challenges, besides working with real life data, was to apply SQL statements to see the data in ways that would add value to the user, using aggregations and comparissons between the same and other tables.
 
 It was also a great practice to continue exercising what questions might return most value from its analysis. 
